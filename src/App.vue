@@ -29,7 +29,6 @@ async function handleLogin() {
 
   try {
     const res = await axios.post('/users/sign_in', loginFormData.value);
-    console.log(res.data);
     const { nickname, token } = res.data;
     axios.defaults.headers.common['Authorization'] = token;
     isLogin.value = true;

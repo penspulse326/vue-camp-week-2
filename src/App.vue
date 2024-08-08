@@ -86,6 +86,18 @@ async function getTodos() {
   }
 }
 
+async function addTodo() {
+  if (!inputTodo.value) return;
+
+  try {
+    await axios.post('/todos', { content: inputTodo.value });
+    inputTodo.value = '';
+    getTodos();
+  } catch (error) {
+    alert('新增失敗，請重新整理或稍後再試 QAQ');
+  }
+}
+
 watch(isLogin, () => {
   if (isLogin.value) {
     getTodos();
@@ -249,7 +261,7 @@ onMounted(() => {
             class="form-control"
             placeholder="請輸入待辦事項"
           />
-          <button class="btn btn-primary" type="button" id="button-addon2">新增待辦</button>
+          <button type="button" @click="addTodo" class="btn btn-primary">新增待辦</button>
         </div>
       </div>
 

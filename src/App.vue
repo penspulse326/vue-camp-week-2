@@ -112,8 +112,9 @@ async function updateTodo() {
   if (!editingTodo.value) return;
 
   const { id, content } = editingTodo.value;
+
   try {
-    const res = await axios.put(`/todos/${id}`, { content });
+    await axios.put(`/todos/${id}`, { content });
     editingTodo.value = null;
     getTodos();
   } catch (error) {

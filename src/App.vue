@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { onMounted, ref, watch } from 'vue';
 import type { FormType, TodoItem } from './types';
+import { API_AUTH, API_TODO } from './services/todo_endpoints';
 
 const formType = ref<FormType>('login');
 const isLoading = ref(false);
@@ -27,13 +28,17 @@ async function handleLogin() {
   if (isLoading.value) return;
   isLoading.value = true;
 
-  try {
-    const res = await axios.post('/users/sign_in', loginFormData.value);
-    const { nickname, token } = res.data;
+  const { response, error } = await API_AUTH._LOGIN(loginFormData.value);
+
+  if (response) {
+    const { nickname, token } = response;
     axios.defaults.headers.common['Authorization'] = token;
+
     isLogin.value = true;
     username.value = nickname;
-  } catch (error) {
+  }
+
+  if (error) {
     alert('登入失敗，請檢查輸入資訊是否正確 QAQ');
   }
 
@@ -44,21 +49,28 @@ async function handleLogout() {
   if (isLoading.value) return;
   isLoading.value = true;
 
-  try {
-    await axios.post('/users/sign_out');
-  } catch (error) {
-    alert('登出失敗，可能是登入狀態已過期，請重新整理 QAQ');
+  const { response, error } = await API_AUTH._LOGOUT();
+
+  if (response) {
+    isLogin.value = false;
+    username.value = '';
+  }
+
+  if (error) {
+    alert('登出失敗，請重新整理或稍後再試 QAQ');
   }
 
   isLoading.value = false;
-  isLogin.value = false;
 }
 
 async function handleCheckout() {
-  try {
-    const res = await axios.get('/users/checkout');
-    alert(`驗證${res.data.status ? '成功' : '失敗'}`);
-  } catch (error: any) {
+  const { response, error } = await API_AUTH._CHECKOUT();
+
+  if (response) {
+    alert('驗證成功');
+  }
+
+  if (error) {
     alert(`驗證失敗，可能是登入狀態已過期，請重新整理 QAQ`);
   }
 }
@@ -67,21 +79,28 @@ async function handleSignup() {
   if (isLoading.value) return;
   isLoading.value = true;
 
-  try {
-    const res = await axios.post('/users/sign_up', signupFormData.value);
-    alert(`註冊${res.data.status ? '成功' : '失敗'}`);
-  } catch (error: any) {
-    alert(`註冊失敗，${error.response.data.message} QAQ`);
+  const { response, error } = await API_AUTH._SIGNUP(signupFormData.value);
+
+  if (response) {
+    alert('註冊成功');
+    formType.value = 'login';
+  }
+
+  if (error) {
+    alert(`註冊失敗，${error.message} QAQ`);
   }
 
   isLoading.value = false;
 }
 
 async function getTodos() {
-  try {
-    const res = await axios.get('/todos');
-    todos.value = res.data.data;
-  } catch (error) {
+  const { response, error } = await API_TODO._GET();
+
+  if (response) {
+    todos.value = response.data;
+  }
+
+  if (error) {
     alert('載入失敗，請重新整理或稍後再試 QAQ');
   }
 }
@@ -89,45 +108,68 @@ async function getTodos() {
 async function addTodo() {
   if (!inputTodo.value) return;
 
-  try {
-    await axios.post('/todos', { content: inputTodo.value });
+  const { response, error } = await API_TODO._ADD(inputTodo.value);
+
+  if (response) {
     inputTodo.value = '';
     getTodos();
-  } catch (error) {
+  }
+
+  if (error) {
     alert('新增失敗，請重新整理或稍後再試 QAQ');
   }
 }
 
 async function toggleTodo(id: string) {
-  try {
-    await axios.patch(`/todos/${id}/toggle`);
+  if (isLoading.value) return;
+  isLoading.value = true;
+
+  const { response, error } = await API_TODO._TOGGLE(id);
+
+  if (response) {
     getTodos();
-  } catch (error) {
+  }
+
+  if (error) {
     alert('更新失敗，請重新整理或稍後再試 QAQ');
   }
+
+  isLoading.value = false;
 }
 
 async function updateTodo() {
-  if (!editingTodo.value) return;
+  if (isLoading.value || !editingTodo.value) return;
 
   const { id, content } = editingTodo.value;
+  const { response, error } = await API_TODO._UPDATE(id, content);
 
-  try {
-    await axios.put(`/todos/${id}`, { content });
+  if (response) {
     editingTodo.value = null;
     getTodos();
-  } catch (error) {
+  }
+
+  if (error) {
     alert('更新失敗，請重新整理或稍後再試 QAQ');
   }
+
+  isLoading.value = false;
 }
 
 async function deleteTodo(id: string) {
-  try {
-    await axios.delete(`/todos/${id}`);
+  if (isLoading.value) return;
+  isLoading.value = true;
+
+  const { response, error } = await API_TODO._DELETE(id);
+
+  if (response) {
     getTodos();
-  } catch (error) {
+  }
+
+  if (error) {
     alert('刪除失敗，請重新整理或稍後再試 QAQ');
   }
+
+  isLoading.value = false;
 }
 
 watch(isLogin, () => {

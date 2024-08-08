@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import axios from 'axios';
 import { onMounted, ref, watch } from 'vue';
-import type { FormType, TodoItem } from './types';
 import { API_AUTH, API_TODO } from './services/todo_endpoints';
+import type { FormType, TodoItem } from './types';
 
 const formType = ref<FormType>('login');
 const isLoading = ref(false);

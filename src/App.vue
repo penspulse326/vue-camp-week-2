@@ -98,6 +98,24 @@ async function addTodo() {
   }
 }
 
+async function toggleTodo(id: string) {
+  try {
+    await axios.patch(`/todos/${id}/toggle`);
+    getTodos();
+  } catch (error) {
+    alert('更新失敗，請重新整理或稍後再試 QAQ');
+  }
+}
+
+async function deleteTodo(id: string) {
+  try {
+    await axios.delete(`/todos/${id}`);
+    getTodos();
+  } catch (error) {
+    alert('刪除失敗，請重新整理或稍後再試 QAQ');
+  }
+}
+
 watch(isLogin, () => {
   if (isLogin.value) {
     getTodos();
@@ -246,7 +264,7 @@ onMounted(() => {
     </div>
     <hr />
   </main>
-  <section class="container">
+  <section v-if="isLogin" class="container">
     <div class="row flex-column align-items-center">
       <h2 class="col-md-6 col-xl-4 mb-4 py-2 bg-primary rounded-3 text-center">
         {{ username }} 的待辦事項
@@ -273,10 +291,22 @@ onMounted(() => {
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
         >
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
-            <label class="form-check-label" for="flexCheckDefault"> {{ todo.content }} </label>
+            <input
+              @change="toggleTodo(todo.id)"
+              v-model="todo.status"
+              type="checkbox"
+              class="form-check-input"
+            />
+            <label> {{ todo.content }} </label>
           </div>
-          <button type="button" class="btn btn-outline-danger btn-sm">刪除</button>
+          <button
+            type="button"
+            @click="deleteTodo(todo.id)"
+            :id="todo.id"
+            class="btn btn-outline-danger btn-sm"
+          >
+            刪除
+          </button>
         </li>
       </ul>
     </div>

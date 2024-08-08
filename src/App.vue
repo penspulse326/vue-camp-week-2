@@ -8,6 +8,7 @@ const isLoading = ref(false);
 const isLogin = ref(false);
 const username = ref('');
 const inputTodo = ref('');
+const editingTodo = ref<TodoItem | null>(null);
 
 const loginFormData = ref({
   email: 'ss@11.com',
@@ -101,6 +102,19 @@ async function addTodo() {
 async function toggleTodo(id: string) {
   try {
     await axios.patch(`/todos/${id}/toggle`);
+    getTodos();
+  } catch (error) {
+    alert('更新失敗，請重新整理或稍後再試 QAQ');
+  }
+}
+
+async function updateTodo() {
+  if (!editingTodo.value) return;
+
+  const { id, content } = editingTodo.value;
+  try {
+    const res = await axios.put(`/todos/${id}`, { content });
+    editingTodo.value = null;
     getTodos();
   } catch (error) {
     alert('更新失敗，請重新整理或稍後再試 QAQ');
@@ -264,7 +278,7 @@ onMounted(() => {
     </div>
     <hr />
   </main>
-  <section v-if="isLogin" class="container">
+  <section v-if="isLogin" class="container mb-3">
     <div class="row flex-column align-items-center">
       <h2 class="col-md-6 col-xl-4 mb-4 py-2 bg-primary rounded-3 text-center">
         {{ username }} 的待辦事項
@@ -275,6 +289,7 @@ onMounted(() => {
         <div class="input-group mb-3">
           <input
             type="text"
+            @keydown.enter="addTodo"
             v-model="inputTodo"
             class="form-control"
             placeholder="請輸入待辦事項"
@@ -290,14 +305,40 @@ onMounted(() => {
           :key="todo.id"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
         >
-          <div class="form-check">
+          <div class="d-flex align-items-center gap-2 form-check">
             <input
               @change="toggleTodo(todo.id)"
               v-model="todo.status"
               type="checkbox"
               class="form-check-input"
             />
-            <label> {{ todo.content }} </label>
+
+            <!-- editing -->
+            <div
+              v-if="editingTodo?.id === todo.id"
+              class="input-group-sm d-flex align-items-center"
+            >
+              <input type="text" v-model="editingTodo.content" class="form-control" />
+              <button
+                type="button"
+                @click="updateTodo"
+                class="btn btn-link btn-sm text-black text-nowrap"
+              >
+                完成
+              </button>
+            </div>
+
+            <!-- content -->
+            <div v-else class="d-flex align-items-center">
+              <label> {{ todo.content }} </label>
+              <button
+                type="button"
+                @click="editingTodo = todo"
+                class="btn btn-link btn-sm text-black text-nowrap"
+              >
+                編輯
+              </button>
+            </div>
           </div>
           <button
             type="button"

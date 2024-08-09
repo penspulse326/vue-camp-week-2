@@ -24,17 +24,20 @@ const signupFormData = ref({
 
 const todos = ref<TodoItem[]>([]);
 
-async function useFetch(cb: () => Promise<void>, effect?: Function) {
+/**
+ * @description useFetch 將 loading 的狀態控制在一起，先粗暴地阻止重複請求^^
+ */
+const useFetch = async (cb: Function, effect?: Function) => {
   if (isLoading.value) return;
 
   isLoading.value = true;
   await cb();
   isLoading.value = false;
   effect && effect();
-}
+};
 
-async function handleLogin() {
-  await useFetch(async () => {
+const handleLogin = () => {
+  useFetch(async () => {
     const { response, error } = await API_AUTH._LOGIN(loginFormData.value);
 
     if (error) {
@@ -48,10 +51,10 @@ async function handleLogin() {
     isLogin.value = true;
     username.value = nickname;
   }, getTodos);
-}
+};
 
-async function handleLogout() {
-  await useFetch(async () => {
+const handleLogout = () => {
+  useFetch(async () => {
     const { error } = await API_AUTH._LOGOUT();
 
     if (error) {
@@ -62,10 +65,10 @@ async function handleLogout() {
     isLogin.value = false;
     username.value = '';
   });
-}
+};
 
-async function handleCheckout() {
-  await useFetch(async () => {
+const handleCheckout = () => {
+  useFetch(async () => {
     const { error } = await API_AUTH._CHECKOUT();
 
     if (error) {
@@ -75,10 +78,10 @@ async function handleCheckout() {
 
     alert('驗證成功');
   });
-}
+};
 
-async function handleSignup() {
-  await useFetch(async () => {
+const handleSignup = () => {
+  useFetch(async () => {
     const { error } = await API_AUTH._SIGNUP(signupFormData.value);
 
     if (error) {
@@ -89,10 +92,10 @@ async function handleSignup() {
     alert('註冊成功');
     formType.value = 'login';
   });
-}
+};
 
-async function getTodos() {
-  await useFetch(async () => {
+const getTodos = () => {
+  useFetch(async () => {
     const { response, error } = await API_TODO._GET();
 
     if (error) {
@@ -102,10 +105,10 @@ async function getTodos() {
 
     todos.value = response.data;
   });
-}
+};
 
-async function addTodo() {
-  await useFetch(async () => {
+const addTodo = () => {
+  useFetch(async () => {
     const { error } = await API_TODO._ADD(inputTodo.value);
     if (error) {
       alert('新增失敗，請重新整理或稍後再試 QAQ');
@@ -114,20 +117,20 @@ async function addTodo() {
 
     inputTodo.value = '';
   }, getTodos);
-}
+};
 
-async function toggleTodo(id: string) {
-  await useFetch(async () => {
+const toggleTodo = (id: string) => {
+  useFetch(async () => {
     const { error } = await API_TODO._TOGGLE(id);
     if (error) {
       alert('更新失敗，請重新整理或稍後再試 QAQ');
       return;
     }
   }, getTodos);
-}
+};
 
-async function updateTodo() {
-  await useFetch(async () => {
+const updateTodo = () => {
+  useFetch(async () => {
     if (!editingTodo.value) return;
 
     const { id, content } = editingTodo.value;
@@ -140,10 +143,10 @@ async function updateTodo() {
 
     editingTodo.value = null;
   }, getTodos);
-}
+};
 
-async function deleteTodo(id: string) {
-  await useFetch(async () => {
+const deleteTodo = (id: string) => {
+  useFetch(async () => {
     const { error } = await API_TODO._DELETE(id);
 
     if (error) {
@@ -151,7 +154,7 @@ async function deleteTodo(id: string) {
       return;
     }
   }, getTodos);
-}
+};
 
 watch(isLogin, () => {
   isLogin.value && getTodos();

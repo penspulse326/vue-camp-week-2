@@ -24,158 +24,137 @@ const signupFormData = ref({
 
 const todos = ref<TodoItem[]>([]);
 
-async function handleLogin() {
+async function useFetch(cb: () => Promise<void>, effect?: Function) {
   if (isLoading.value) return;
+
   isLoading.value = true;
+  await cb();
+  isLoading.value = false;
+  effect && effect();
+}
 
-  const { response, error } = await API_AUTH._LOGIN(loginFormData.value);
+async function handleLogin() {
+  await useFetch(async () => {
+    const { response, error } = await API_AUTH._LOGIN(loginFormData.value);
 
-  if (response) {
+    if (error) {
+      alert('登入失敗，請檢查輸入資訊是否正確 QAQ');
+      return;
+    }
+
     const { nickname, token } = response;
     axios.defaults.headers.common['Authorization'] = token;
 
     isLogin.value = true;
     username.value = nickname;
-  }
-
-  if (error) {
-    alert('登入失敗，請檢查輸入資訊是否正確 QAQ');
-  }
-
-  isLoading.value = false;
+  }, getTodos);
 }
 
 async function handleLogout() {
-  if (isLoading.value) return;
-  isLoading.value = true;
+  await useFetch(async () => {
+    const { error } = await API_AUTH._LOGOUT();
 
-  const { response, error } = await API_AUTH._LOGOUT();
+    if (error) {
+      alert('登出失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
 
-  if (response) {
     isLogin.value = false;
     username.value = '';
-  }
-
-  if (error) {
-    alert('登出失敗，請重新整理或稍後再試 QAQ');
-  }
-
-  isLoading.value = false;
+  });
 }
 
 async function handleCheckout() {
-  const { response, error } = await API_AUTH._CHECKOUT();
+  await useFetch(async () => {
+    const { error } = await API_AUTH._CHECKOUT();
 
-  if (response) {
+    if (error) {
+      alert(`驗證失敗，可能是登入狀態已過期，請重新整理 QAQ`);
+      return;
+    }
+
     alert('驗證成功');
-  }
-
-  if (error) {
-    alert(`驗證失敗，可能是登入狀態已過期，請重新整理 QAQ`);
-  }
+  });
 }
 
 async function handleSignup() {
-  if (isLoading.value) return;
-  isLoading.value = true;
+  await useFetch(async () => {
+    const { error } = await API_AUTH._SIGNUP(signupFormData.value);
 
-  const { response, error } = await API_AUTH._SIGNUP(signupFormData.value);
+    if (error) {
+      alert(`註冊失敗，${error.message} QAQ`);
+      return;
+    }
 
-  if (response) {
     alert('註冊成功');
     formType.value = 'login';
-  }
-
-  if (error) {
-    alert(`註冊失敗，${error.message} QAQ`);
-  }
-
-  isLoading.value = false;
+  });
 }
 
 async function getTodos() {
-  const { response, error } = await API_TODO._GET();
+  await useFetch(async () => {
+    const { response, error } = await API_TODO._GET();
 
-  if (response) {
+    if (error) {
+      alert('載入失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
+
     todos.value = response.data;
-  }
-
-  if (error) {
-    alert('載入失敗，請重新整理或稍後再試 QAQ');
-  }
+  });
 }
 
 async function addTodo() {
-  if (!inputTodo.value) return;
+  await useFetch(async () => {
+    const { error } = await API_TODO._ADD(inputTodo.value);
+    if (error) {
+      alert('新增失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
 
-  const { response, error } = await API_TODO._ADD(inputTodo.value);
-
-  if (response) {
     inputTodo.value = '';
-    getTodos();
-  }
-
-  if (error) {
-    alert('新增失敗，請重新整理或稍後再試 QAQ');
-  }
+  }, getTodos);
 }
 
 async function toggleTodo(id: string) {
-  if (isLoading.value) return;
-  isLoading.value = true;
-
-  const { response, error } = await API_TODO._TOGGLE(id);
-
-  if (response) {
-    getTodos();
-  }
-
-  if (error) {
-    alert('更新失敗，請重新整理或稍後再試 QAQ');
-  }
-
-  isLoading.value = false;
+  await useFetch(async () => {
+    const { error } = await API_TODO._TOGGLE(id);
+    if (error) {
+      alert('更新失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
+  }, getTodos);
 }
 
 async function updateTodo() {
-  if (isLoading.value || !editingTodo.value) return;
+  await useFetch(async () => {
+    if (!editingTodo.value) return;
 
-  const { id, content } = editingTodo.value;
-  const { response, error } = await API_TODO._UPDATE(id, content);
+    const { id, content } = editingTodo.value;
+    const { error } = await API_TODO._UPDATE(id, content);
 
-  if (response) {
+    if (error) {
+      alert('更新失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
+
     editingTodo.value = null;
-    getTodos();
-  }
-
-  if (error) {
-    alert('更新失敗，請重新整理或稍後再試 QAQ');
-  }
-
-  isLoading.value = false;
+  }, getTodos);
 }
 
 async function deleteTodo(id: string) {
-  if (isLoading.value) return;
-  isLoading.value = true;
+  await useFetch(async () => {
+    const { error } = await API_TODO._DELETE(id);
 
-  const { response, error } = await API_TODO._DELETE(id);
-
-  if (response) {
-    getTodos();
-  }
-
-  if (error) {
-    alert('刪除失敗，請重新整理或稍後再試 QAQ');
-  }
-
-  isLoading.value = false;
+    if (error) {
+      alert('刪除失敗，請重新整理或稍後再試 QAQ');
+      return;
+    }
+  }, getTodos);
 }
 
 watch(isLogin, () => {
-  if (isLogin.value) {
-    getTodos();
-  }
+  isLogin.value && getTodos();
 });
 
 onMounted(() => {
@@ -395,5 +374,3 @@ onMounted(() => {
     </div>
   </section>
 </template>
-
-<style scoped></style>
